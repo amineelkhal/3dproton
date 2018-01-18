@@ -2,54 +2,16 @@
 <html>
     <head>
         <title>Proton 3D</title>
-        <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
-        <link href="css/font-awesome.css" rel="stylesheet" type="text/css"/>
         <meta charset="utf-8">
-        <style>
-            html, body{
-                height: 100%;
-            }
-            body{
-                background:url(images/bg.png);
-                background-size: cover;
-                margin: 0;
-                font-family: arial;
-            }
-            #container{
-                width:100%;
-                height:100%;
-                box-sizing: border-box;
-            }
-
-            #options{
-                width:80px;
-                min-height: 100px;
-                position: fixed;
-                right: 0;
-                margin: 20px;
-                background:rgba(0,0,0,0.3);
-                text-align: center;
-                color:#fff;
-                font-size: 12px;
-                padding: 10px;
-                box-sizing: border-box;
-                text-shadow:1px 1px 5px black;
-            }
-            i{
-                color: #fff;
-                margin: 20px auto;
-                margin-bottom: 5px; 
-                cursor: pointer;
-                display: block !important;
-            }
-
-        </style>
+        <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+        <link href="css/3dproton.general.css" rel="stylesheet" type="text/css"/>
+        <link href="css/font-awesome.css" rel="stylesheet" type="text/css"/>
     </head>
     <body>
 
         <div id="options">
             <i class="fa fa-eye fa-3x" id="cmdWatcher"></i> <span>Watching</span>
-            <i class="fa fa-eye-slash fa-3x" id="cmdWatcherStop"></i> Stop
+            <i class="fa fa-eye-slash fa-3x" id="cmdWatcherStop"></i> <span>Stop</span>
         </div>
         <div id="container"></div>
 
@@ -63,7 +25,7 @@
             _zoom = 400, _animationTimer = null;
             _textureDirthy = null, plane = null;
             scene = new THREE.Scene();
-            //scene.fog = new THREE.Fog("#444", 50, 1900);
+            scene.fog = new THREE.Fog("#444", 50, 1900);
             renderer = new THREE.WebGLRenderer({alpha: true});
             renderer.setSize(window.innerWidth - 3, window.innerHeight - 3);
             document.getElementById('container').appendChild(renderer.domElement);
@@ -128,16 +90,25 @@
             scene.add(spotLight4);
 
             //LOADING 3D MODEL
-            var collada, colladaScene;
-            var loadingManager = new THREE.LoadingManager(function () {
-                scene.add(colladaScene);
-            });
-            var loader = new THREE.ColladaLoader(loadingManager);
-            loader.load('models/model2.dae', function (_collada) {
-                collada = _collada;
-                colladaScene = collada.scene;
-                console.log( collada.library.geometries["ID3"] );
-            });
+            /*var collada, colladaScene;
+             var loadingManager = new THREE.LoadingManager(function () {
+             scene.add(colladaScene);
+             });
+             var loader = new THREE.ColladaLoader(loadingManager);
+             loader.load('models/model2.dae', function (_collada) {
+             collada = _collada;
+             colladaScene = collada.scene;
+             console.log(collada.library.geometries["ID3"]);
+             });*/
+
+            manager = new THREE.LoadingManager();
+            var loader = new THREE.JSONLoader(manager);
+            loader.load('models/corridor.js',
+                    function (geometry, materials) {
+                        var material = new THREE.MultiMaterial(materials);
+                        var object = new THREE.Mesh(geometry, material);
+                        scene.add(object);
+                    });
 
             function startAnimation() {
                 var time = -performance.now() * 0.0001;
