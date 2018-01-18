@@ -1,0 +1,214 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Proton 3D</title>
+        <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+        <link href="css/font-awesome.css" rel="stylesheet" type="text/css"/>
+        <meta charset="utf-8">
+        <style>
+            html, body{
+                height: 100%;
+            }
+            body{
+                background:url(images/bg.png);
+                background-size: cover;
+                margin: 0;
+                font-family: arial;
+            }
+            #container{
+                width:100%;
+                height:100%;
+                box-sizing: border-box;
+            }
+
+            #options{
+                width:80px;
+                min-height: 100px;
+                position: fixed;
+                right: 0;
+                margin: 20px;
+                background:rgba(0,0,0,0.3);
+                text-align: center;
+                color:#fff;
+                font-size: 12px;
+                padding: 10px;
+                box-sizing: border-box;
+                text-shadow:1px 1px 5px black;
+            }
+            i{
+                color: #fff;
+                margin: 20px auto;
+                margin-bottom: 5px; 
+                cursor: pointer;
+                display: block !important;
+            }
+
+        </style>
+    </head>
+    <body>
+
+        <div id="options">
+            <i class="fa fa-eye fa-3x" id="cmdWatcher"></i> <span>Watching</span>
+            <i class="fa fa-eye-slash fa-3x" id="cmdWatcherStop"></i> Stop
+        </div>
+        <div id="container"></div>
+
+        <script src="js/three.js" type="text/javascript"></script>
+        <script src="js/jquery-3.2.1.min.js" type="text/javascript"></script>
+        <script src="js/OrbitControls.js" type="text/javascript"></script>
+        <script src="js/EventsHandler.js" type="text/javascript"></script>
+        <script src="js/ColladaLoader.js" type="text/javascript"></script>
+        <script type="text/javascript">
+
+            _zoom = 400, _animationTimer = null;
+            _textureDirthy = null, plane = null;
+            scene = new THREE.Scene();
+            //scene.fog = new THREE.Fog("#444", 50, 1900);
+            renderer = new THREE.WebGLRenderer({alpha: true});
+            renderer.setSize(window.innerWidth - 3, window.innerHeight - 3);
+            document.getElementById('container').appendChild(renderer.domElement);
+
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 3000);
+            camera.position.z = 200;
+            camera.position.y = 200;
+            scene.add(camera);
+
+            var gridHelper = new THREE.GridHelper(2000, 50, "#6da8b4", "#68878e");
+            scene.add(gridHelper);
+
+            var geometry = new THREE.CubeGeometry(10, 10, 10);
+            //var material = new THREE.MeshBasicMaterial({color: 0xff0000, wireframe: true});
+            var material = new THREE.MeshLambertMaterial({color: 0xff0000});
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.y = 20;
+            //scene.add(mesh);
+
+            var controls = new THREE.OrbitControls(camera);
+            controls.keys = {LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40};
+            controls.maxPolarAngle = Math.PI / 2;
+            controls.minDistance = 20;
+            controls.maxDistance = 1500;
+            controls.maxPolarAngle = Math.PI * 3 / 7
+            controls.update();
+
+            var texture = new THREE.TextureLoader().load("images/plans/plan2.png");
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(1, 1);
+            texture.minFilter = THREE.LinearFilter;
+
+            geometry = new THREE.PlaneGeometry(1800, 1800);
+            material = new THREE.MeshBasicMaterial({map: texture, transparent: true, opacity: 0.6});
+            plane = new THREE.Mesh(geometry, material);
+            plane.rotateX(-Math.PI / 2);
+            plane.position.y = 0.1;
+            scene.add(plane);
+
+            /*var light = new THREE.PointLight( 0xffffff, 20, 100, 2 );
+             light.position.set(0, 100, 0);
+             scene.add(light);
+             light = new THREE.PointLight( 0xfffff, 5, 1500 );
+             light.position.set(100, 100, 0);
+             scene.add(light);*/
+
+            var spotLight = new THREE.SpotLight(0xffffff);
+            spotLight.position.set(150, 100, 150);
+            scene.add(spotLight);
+            spotLight2 = new THREE.SpotLight(0xffffff);
+            spotLight2.position.set(-150, 100, -150);
+            spotLight2.intensity = 0.5;
+            scene.add(spotLight2);
+            spotLight3 = new THREE.SpotLight(0xffffff);
+            spotLight3.position.set(-150, 100, 150);
+            spotLight3.intensity = 0.3;
+            scene.add(spotLight3);
+            spotLight4 = new THREE.SpotLight(0xffffff);
+            spotLight4.position.set(150, 100, -150);
+            spotLight3.intensity = 0.3;
+            scene.add(spotLight4);
+
+            //LOADING 3D MODEL
+            var collada, colladaScene;
+            var loadingManager = new THREE.LoadingManager(function () {
+                scene.add(colladaScene);
+            });
+            var loader = new THREE.ColladaLoader(loadingManager);
+            loader.load('models/model2.dae', function (_collada) {
+                collada = _collada;
+                colladaScene = collada.scene;
+                console.log( collada.library.geometries["ID3"] );
+            });
+
+            function startAnimation() {
+                var time = -performance.now() * 0.0001;
+                //camera.position.x = 600;
+                camera.position.x = (_zoom * Math.cos(time));
+                camera.position.y = 431.100;
+                camera.position.z = (_zoom * Math.sin(time));
+                camera.lookAt(scene.position);
+                _animationTimer = setTimeout(startAnimation, 50);
+            }
+
+            function stopAnimation() {
+                clearTimeout(_animationTimer);
+                camera.position.y = 50;
+                camera.position.x = 0;
+                camera.position.z = 50;
+                $("canvas").hide();
+                $("canvas").fadeIn();
+            }
+
+            function animate() {
+                /*mesh.rotation.x += 0.1;
+                 mesh.rotation.y += 0.1;*/
+                //console.log(camera.position.x);
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+
+            function switchAnimation() {
+                $("canvas").hide();
+                $("canvas").fadeIn(500);
+            }
+
+            window.addEventListener('resize', onWindowResize, false);
+            function onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth - 3, window.innerHeight - 3);
+            }
+
+            $("#cmdWatcher").click(function () {
+                $("canvas").hide();
+                $("canvas").fadeIn(2000);
+                controls.target = new THREE.Vector3(0, 0, 0);
+                _animationTimer = setTimeout(startAnimation, 50);
+            });
+
+            $("#cmdWatcherStop").click(function () {
+                clearTimeout(_animationTimer);
+            });
+
+            var domEvents = new THREEx.DomEvents(camera, renderer.domElement);
+            domEvents.addEventListener(mesh, 'click', function () {
+                stopAnimation();
+                switchAnimation();
+                controls.target = new THREE.Vector3(mesh.position.x, mesh.position.y, 0);
+            });
+
+            $('canvas').mousedown(function () {
+                clearTimeout(_animationTimer);
+            });
+
+            $(document).on("wheel", function () {
+                clearTimeout(_animationTimer);
+            });
+
+            startAnimation();
+            animate();
+
+            //console.log(gridHelper.material.color);
+        </script>
+    </body>
+</html>
